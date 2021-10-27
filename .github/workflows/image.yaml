@@ -1,0 +1,36 @@
+name: Docker image
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  # Build image and deploy to ghcr.io
+  docker:
+    name: Build and deploy Docker image
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: anx-cr.io/se-public/cert-manager-webhook-anexia
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get the version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+      - name: Login
+        run: |
+          echo $PAT | docker login anx-cr.io --username robot_se-public+code-anexia-com --password-stdin
+        env:
+          PAT: ${{ secrets.PACKAGE_REGISTRY_PAT }}
+      - name: Build image
+        run: |
+          docker build --tag $IMAGE:$VERSION .
+      - name: Publish version image
+        run: |
+          docker push $IMAGE:$VERSION
+      - name: Tag latest image
+        run: |
+          docker tag $IMAGE:$VERSION $IMAGE:latest
+      - name: Publish latest image
+        run: |
+          docker push $IMAGE:latest
