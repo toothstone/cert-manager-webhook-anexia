@@ -6,7 +6,7 @@ import (
 
 	"github.com/jetstack/cert-manager/test/acme/dns"
 
-	"github.com/cert-manager/webhook-example/example"
+	"github.com/toothstone/cert-manager-webhook-anexia/example"
 )
 
 var (
