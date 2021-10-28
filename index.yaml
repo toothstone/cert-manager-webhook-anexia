@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  cert-manager-webhook-anexia:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2021-10-28T13:10:50.951417701Z"
+    description: A Helm chart for Kubernetes
+    digest: efcbe973b11f0ec3e4c01be190e2ff076cfb81b77a3406d4735be5b5a8271ef3
+    name: cert-manager-webhook-anexia
+    urls:
+    - https://github.com/toothstone/cert-manager-webhook-anexia/releases/download/cert-manager-webhook-anexia-0.1.2/cert-manager-webhook-anexia-0.1.2.tgz
+    version: 0.1.2
+generated: "2021-10-28T13:10:50.951433401Z"
