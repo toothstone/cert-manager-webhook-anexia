@@ -8,8 +8,6 @@
 # here is recommended.
 groupName: acme.anexia.com
 
-anexiaToken: changemeplease
-
 certManager:
   namespace: cert-manager
   serviceAccountName: cert-manager

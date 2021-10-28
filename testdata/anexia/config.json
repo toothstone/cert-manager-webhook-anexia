@@ -1,3 +1,6 @@
 {
+    "secretRef": "anexia-clouddns-secret",
+    "secretRefNamespace": "basic-present-record",
+    "secretKey": "anexia-token",
     "apiUrl" : "https://engine.anexia-it.com/api/clouddns/v1/zone.json"
 }

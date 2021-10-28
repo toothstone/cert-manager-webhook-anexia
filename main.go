@@ -9,6 +9,7 @@ import (
 	"time"
 
 	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -63,8 +64,10 @@ type anexiaDNSProviderSolver struct {
 // be used by your provider here, you should reference a Kubernetes Secret
 // resource and fetch these credentials using a Kubernetes clientset.
 type anexiaDNSProviderConfig struct {
-	// SecretRef string `json:"secretName"`
-	ApiUrl string `json:"apiUrl"`
+	ApiUrl             string `json:"apiUrl"`
+	SecretRef          string `json:"secretRef"`
+	SecretRefNamespace string `json:"secretRefNamespace"`
+	SecretKey          string `json:"secretKey"`
 }
 
 // Name is used as the name for this DNS solver when referencing it on the ACME
@@ -89,7 +92,7 @@ func (c *anexiaDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	token, _ := getToken(cfg)
+	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
 		klog.Error("Unable to set up anxcloud client:", err)
@@ -127,7 +130,7 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	token, _ := getToken(cfg)
+	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
 		klog.Error("Unable to set up anxcloud client:", err)
@@ -155,10 +158,11 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 				return err
 			}
 			klog.Info("Deleted a record for ", ch.ResolvedFQDN)
+			return nil
 		}
 	}
 
-	return nil
+	return fmt.Errorf("could not find and delete record for %s", ch.ResolvedFQDN)
 }
 
 // Initialize will be called when the webhook first starts.
@@ -196,7 +200,18 @@ func loadConfig(cfgJSON *extapi.JSON) (anexiaDNSProviderConfig, error) {
 	return cfg, nil
 }
 
-func getToken(cfg anexiaDNSProviderConfig) (string, error) {
-	// TODO: Add token fetching via k8s client from SecretRef
-	return os.Getenv("ANEXIA_TOKEN"), nil
+func getToken(cfg anexiaDNSProviderConfig, c *anexiaDNSProviderSolver, ch *v1alpha1.ChallengeRequest) (string, error) {
+	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	secret, err := c.client.CoreV1().Secrets(cfg.SecretRefNamespace).Get(ctx, cfg.SecretRef, metav1.GetOptions{})
+
+	if err != nil {
+		klog.Errorf("Unable to get secret %s in namespace %s: %v", cfg.SecretRef, cfg.SecretRefNamespace, err)
+		return "", err
+	}
+
+	token_data, ok := secret.Data[cfg.SecretKey]
+	if !ok {
+		return "", fmt.Errorf("key %s not found in secret data", cfg.SecretKey)
+	}
+	return string(token_data), err
 }

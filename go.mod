@@ -8,6 +8,7 @@ require (
 	github.com/miekg/dns v1.1.31
 	github.com/stretchr/testify v1.7.0
 	k8s.io/apiextensions-apiserver v0.19.0
+	k8s.io/apimachinery v0.19.0 // indirect
 	k8s.io/client-go v0.19.0
 	k8s.io/klog v1.0.0 // indirect
 )
