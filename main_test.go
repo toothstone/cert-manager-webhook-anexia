@@ -9,6 +9,7 @@ import (
 
 var (
 	zone = os.Getenv("TEST_ZONE_NAME")
+	fqdn = os.Getenv("TEST_FQDN")
 )
 
 func TestRunsSuite(t *testing.T) {
@@ -19,6 +20,7 @@ func TestRunsSuite(t *testing.T) {
 
 	fixture := dns.NewFixture(&anexiaDNSProviderSolver{},
 		dns.SetResolvedZone(zone),
+		dns.SetResolvedFQDN(fqdn),
 		dns.SetAllowAmbientCredentials(false),
 		dns.SetManifestPath("testdata/anexia"),
 		dns.SetBinariesPath("_test/kubebuilder/bin"),
