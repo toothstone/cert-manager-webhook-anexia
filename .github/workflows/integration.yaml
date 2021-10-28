@@ -1,0 +1,25 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  repository_dispatch:
+    types: [ok-to-test-command]
+
+name: Integration tests
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Insert required Anexia token into secret
+      run: sed -i 's/changemeplease/${{ secrets.ANEXIA_CLOUDDNS_TOKEN }}/g' testdata/anexia/anexia-clouddns-secret.yml
+    
+    - name: Run integration tests
+      env: 
+        TEST_ZONE_NAME: cm-test.dev.se.anx.io.
+      run: make test
