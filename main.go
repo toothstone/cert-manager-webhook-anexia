@@ -142,6 +142,12 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 	}
 
 	for _, r := range records {
+		// Work around ENGSUP-5257, CloudDNS API is inserting quotes into the record data
+		if strings.HasPrefix(r.RData, "\"") && strings.HasSuffix(r.RData, "\"") {
+			r.RData = strings.TrimPrefix(r.RData, "\"")
+			r.RData = strings.TrimSuffix(r.RData, "\"")
+		}
+
 		if r.Name == util.UnFqdn(strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)) && r.RData == ch.Key {
 			err := zoneAPI.DeleteRecord(ctx, util.UnFqdn(ch.ResolvedZone), r.Identifier)
 			if err != nil {
