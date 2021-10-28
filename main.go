@@ -74,7 +74,7 @@ type anexiaDNSProviderConfig struct {
 // within a single webhook deployment**.
 // For example, `cloudflare` may be used as the name of a solver.
 func (c *anexiaDNSProviderSolver) Name() string {
-	return "anexia-solver"
+	return "anexia"
 }
 
 // Present is responsible for actually presenting the DNS record with the
