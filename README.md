@@ -1,54 +1,142 @@
-# ACME webhook example
+# cert-manager ACME webhook for Anexia CloudDNS
 
-The ACME issuer type supports an optional 'webhook' solver, which can be used
-to implement custom DNS01 challenge solving logic.
+This repository provides a webhook to use cert-manager with Anexia CloudDNS.
 
-This is useful if you need to use cert-manager with a DNS provider that is not
-officially supported in cert-manager core.
+## Requirements
+-   [go](https://golang.org/) >= 1.13.0
+-   [helm](https://helm.sh/) >= v3.0.0
+-   [cert-manager](https://cert-manager.io/) >= 1.6.0
 
-## Why not in core?
+## Installation
 
-As the project & adoption has grown, there has been an influx of DNS provider
-pull requests to our core codebase. As this number has grown, the test matrix
-has become un-maintainable and so, it's not possible for us to certify that
-providers work to a sufficient level.
+### cert-manager
 
-By creating this 'interface' between cert-manager and DNS providers, we allow
-users to quickly iterate and test out new integrations, and then packaging
-those up themselves as 'extensions' to cert-manager.
+Follow the [instructions](https://cert-manager.io/docs/installation/) in the cert-manager documentation to install it within your cluster.
 
-We can also then provide a standardised 'testing framework', or set of
-conformance tests, which allow us to validate the a DNS provider works as
-expected.
+### Webhook
 
-## Creating your own webhook
+#### Using public helm chart
+```bash
+helm repo add cert-manager-webhook-anexia https://toothstone.github.io/cert-manager-webhook-anexia
+helm install --namespace cert-manager cert-manager-webhook-anexia cert-manager-webhook-anexia/cert-manager-webhook-anexia
+```
 
-Webhook's themselves are deployed as Kubernetes API services, in order to allow
-administrators to restrict access to webhooks with Kubernetes RBAC.
+#### From local checkout
 
-This is important, as otherwise it'd be possible for anyone with access to your
-webhook to complete ACME challenge validations and obtain certificates.
+```bash
+helm install --namespace cert-manager cert-manager-webhook-anexia deploy/cert-manager-webhook-anexia
+```
+**Note**: The kubernetes resources used to install the webhook should be deployed within the same namespace as the cert-manager.
 
-To make the set up of these webhook's easier, we provide a template repository
-that can be used to get started quickly.
+To uninstall the webhook run
+```bash
+helm uninstall --namespace cert-manager cert-manager-webhook-anexia
+```
+## Usage
 
-### Creating your own repository
+### Issuer
+
+Create a `ClusterIssuer` or `Issuer` resource as follows:
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: anexia-issuer
+spec:
+  acme:
+    email: mail@example.com # REPLACE THIS WITH YOUR EMAIL!!!
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: anexia-issuer-account-key
+    solvers:
+    - dns01:
+        webhook:
+          groupName: acme.anexia.com
+          solverName: anexia
+          config:
+            apiUrl: https://engine.anexia-it.com/api/clouddns/v1/zone.json # Don't change this if you're an Anexia customer
+            secretRef: anexia-clouddns-secret # The Secret resource storing the Anexia Engine token to interact with CloudDNS
+            secretRefNamespace: cert-manager # The namespace where the secret lives
+            secretKey: anexia-token # The key used for the token entry in the data section of the secret
+```
+
+### Credentials
+In order to access the CloudDNS API, the webhook needs an Anexia Engine API token.
+
+If you choose a different name for the secret than `anexia-clouddns-secret`,
+make sure that you modify the value of `secretRef` in the `[Cluster]Issuer` config section.
+If you want to keep the secret in a different namespace than `cert-manager`,
+make sure that the ServiceAccount has access to it.
+
+The secret for the example above may look like this:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: anexia-clouddns-secret
+  namespace: cert-manager
+data:
+  anexia-token: <base64 encoded Anexia Engine token>
+```
+
+### Create a certificate
+
+Finally you can create certificates, for example:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: anexia-cert-manager-test
+spec:
+  # Secret names are always required.
+  secretName: anexia-cert-manager-test-tls
+
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - YourOrg
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - example.com
+  # Issuer references are always required.
+  issuerRef:
+    name: anexia-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: ClusterIssuer
+```
+
+## Development
 
 ### Running the test suite
 
-All DNS providers **must** run the DNS01 provider conformance testing suite,
-else they will have undetermined behaviour when used with cert-manager.
+This solver implementation **must** pass the DNS01 provider conformance testing suite.
 
-**It is essential that you configure and run the test suite when creating a
-DNS01 webhook.**
-
-An example Go test file has been provided in [main_test.go](https://github.com/jetstack/cert-manager-webhook-example/blob/master/main_test.go).
+See [testdata/anexia/README.md] for details on how to set up the test configuration and secret.
+You'll need an Anexia Engine token with CloudDNS access and a zone since these are integration tests
+running against the real CloudDNS API.
 
 You can run the test suite with:
 
 ```bash
-$ TEST_ZONE_NAME=example.com. make test
+TEST_ZONE_NAME=your.testing.zone.com. make verify
 ```
 
-The example file has a number of areas you must fill in and replace with your
-own options in order for tests to pass.
+## Credits
+
+We would like to thank all contributors to this project, some of which are not included in the git history:
+* [Simon](https://github.com/kaisers1)
+* [Christoph Glantschnig](https://github.com/glantscc)
+* Sebastian Kerin
+* [Tobias Paepke](https://github.com/paepke)
+* [Roland Urbano](https://github.com/X4mp)
