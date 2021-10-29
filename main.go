@@ -91,7 +91,8 @@ func (c *anexiaDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	defer cancel()
 	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
@@ -129,7 +130,8 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	defer cancel()
 	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
@@ -201,7 +203,8 @@ func loadConfig(cfgJSON *extapi.JSON) (anexiaDNSProviderConfig, error) {
 }
 
 func getToken(cfg anexiaDNSProviderConfig, c *anexiaDNSProviderSolver, ch *v1alpha1.ChallengeRequest) (string, error) {
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	defer cancel()
 	secret, err := c.client.CoreV1().Secrets(cfg.SecretRefNamespace).Get(ctx, cfg.SecretRef, metav1.GetOptions{})
 
 	if err != nil {
