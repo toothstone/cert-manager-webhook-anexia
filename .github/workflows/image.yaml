@@ -10,6 +10,8 @@ jobs:
   docker:
     name: Build and deploy Docker image
     runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/toothstone/cert-manager-webhook-anexia
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -22,13 +24,13 @@ jobs:
           PAT: ${{ secrets.PACKAGE_REGISTRY_PAT }}
       - name: Build image
         run: |
-          docker build --tag ghcr.io/toothstone/cert-manager-anexia-webhook:$VERSION .
+          docker build --tag $IMAGE:$VERSION .
       - name: Publish version image
         run: |
-          docker push ghcr.io/toothstone/cert-manager-anexia-webhook:$VERSION
+          docker push $IMAGE:$VERSION
       - name: Tag latest image
         run: |
-          docker tag ghcr.io/toothstone/cert-manager-anexia-webhook:$VERSION ghcr.io/toothstone/cert-manager-anexia-webhook:latest
+          docker tag $IMAGE:$VERSION $IMAGE:latest
       - name: Publish latest image
         run: |
-          docker push ghcr.io/toothstone/cert-manager-anexia-webhook:latest
+          docker push $IMAGE:latest
