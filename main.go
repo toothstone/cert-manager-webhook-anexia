@@ -91,9 +91,14 @@ func (c *anexiaDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
+	token, err := getToken(cfg, c, ch)
+	if err != nil {
+		klog.Error("Unable to aquire anxcloud token:", err)
+		return err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
-	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
 		klog.Error("Unable to set up anxcloud client:", err)
@@ -130,9 +135,14 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
+	token, err := getToken(cfg, c, ch)
+	if err != nil {
+		klog.Error("Unable to aquire anxcloud token:", err)
+		return err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
-	token, _ := getToken(cfg, c, ch)
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
 		klog.Error("Unable to set up anxcloud client:", err)
