@@ -80,6 +80,29 @@ func (c *anexiaDNSProviderSolver) Name() string {
 	return "anexia"
 }
 
+// Find a TXT record with the given recordName and recordRData in the CloudDNS zone with the name zoneName
+func FindTXTRecord(c anxcloudClient.Client, ctx context.Context, zoneName string, recordName string, recordRData string) (*anxcloudZone.Record, error) {
+	zoneAPI := anxcloudZone.NewAPI(c)
+	records, err := zoneAPI.ListRecords(ctx, zoneName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range records {
+		// Work around ENGSUP-5257, CloudDNS API is inserting quotes into the TXT record data
+		if strings.HasPrefix(r.RData, "\"") && strings.HasSuffix(r.RData, "\"") {
+			r.RData = strings.TrimPrefix(r.RData, "\"")
+			r.RData = strings.TrimSuffix(r.RData, "\"")
+		}
+
+		if r.Name == recordName && r.RData == recordRData && r.Type == "TXT" {
+			return &r, nil
+		}
+	}
+	return nil, nil
+}
+
 // Present is responsible for actually presenting the DNS record with the
 // DNS provider.
 // This method should tolerate being called multiple times with the same value.
@@ -105,14 +128,30 @@ func (c *anexiaDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
+	zoneName := util.UnFqdn(ch.ResolvedZone)
+	recordName := util.UnFqdn(strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone))
+
+	// Look if the needed record already exists
+	r, err := FindTXTRecord(client, ctx, zoneName, recordName, ch.Key)
+	if err != nil {
+		klog.Error("Unable to search in existing records:", err)
+		return err
+	}
+
+	// If a record with the given specs already exists and was found, we don't need to do anything
+	// The CloudDNS API will error out if we try to recreate an existing record, so we have to return here
+	if r != nil {
+		return nil
+	}
+
 	recordRequest := anxcloudZone.RecordRequest{
-		Name:  util.UnFqdn(strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)),
+		Name:  recordName,
 		Type:  "TXT",
 		RData: ch.Key,
 		TTL:   120,
 	}
 
-	_, err = anxcloudZone.NewAPI(client).NewRecord(ctx, util.UnFqdn(ch.ResolvedZone), recordRequest)
+	_, err = anxcloudZone.NewAPI(client).NewRecord(ctx, zoneName, recordRequest)
 	if err != nil {
 		klog.Error(err)
 		klog.Error("Unable to create record, RecordRequest was:", recordRequest)
@@ -149,29 +188,24 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	zoneAPI := anxcloudZone.NewAPI(client)
-	records, err := zoneAPI.ListRecords(ctx, util.UnFqdn(ch.ResolvedZone))
+	zoneName := util.UnFqdn(ch.ResolvedZone)
+	recordName := util.UnFqdn(strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone))
 
+	r, err := FindTXTRecord(client, ctx, zoneName, recordName, ch.Key)
 	if err != nil {
+		klog.Error("Unable to search in existing records:", err)
 		return err
 	}
 
-	for _, r := range records {
-		// Work around ENGSUP-5257, CloudDNS API is inserting quotes into the record data
-		if strings.HasPrefix(r.RData, "\"") && strings.HasSuffix(r.RData, "\"") {
-			r.RData = strings.TrimPrefix(r.RData, "\"")
-			r.RData = strings.TrimSuffix(r.RData, "\"")
+	if r != nil {
+		zoneAPI := anxcloudZone.NewAPI(client)
+		err := zoneAPI.DeleteRecord(ctx, util.UnFqdn(ch.ResolvedZone), r.Identifier)
+		if err != nil {
+			klog.Error("Unable to delete record:", err)
+			return err
 		}
-
-		if r.Name == util.UnFqdn(strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)) && r.RData == ch.Key {
-			err := zoneAPI.DeleteRecord(ctx, util.UnFqdn(ch.ResolvedZone), r.Identifier)
-			if err != nil {
-				klog.Error("Unable to delete record:", err)
-				return err
-			}
-			klog.Info("Deleted a record for ", ch.ResolvedFQDN)
-			return nil
-		}
+		klog.Info("Deleted a record for ", ch.ResolvedFQDN)
+		return nil
 	}
 
 	return fmt.Errorf("could not find and delete record for %s", ch.ResolvedFQDN)
