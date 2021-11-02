@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/toothstone/cert-manager-webhook-anexia/branch/main/graph/badge.svg?token=G573SD12QG)](https://codecov.io/gh/toothstone/cert-manager-webhook-anexia)
+
 # cert-manager ACME webhook for Anexia CloudDNS
 
 This repository provides a webhook to use cert-manager with Anexia CloudDNS.
