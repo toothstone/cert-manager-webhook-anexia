@@ -11,7 +11,7 @@ jobs:
     name: Build and deploy Docker image
     runs-on: ubuntu-latest
     env:
-      IMAGE: ghcr.io/toothstone/cert-manager-webhook-anexia
+      IMAGE: ghcr.io/$GITHUB_REPOSITORY
     steps:
       - name: Checkout
         uses: actions/checkout@v2
