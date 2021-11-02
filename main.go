@@ -260,5 +260,5 @@ func getToken(cfg anexiaDNSProviderConfig, c *anexiaDNSProviderSolver, ch *v1alp
 	if !ok {
 		return "", fmt.Errorf("key %s not found in secret data", cfg.SecretKey)
 	}
-	return string(token_data), err
+	return string(token_data), nil
 }
