@@ -11,7 +11,7 @@ KUBEBUILDER_VERSION=2.3.2
 $(shell mkdir -p "$(OUT)")
 
 test: _test/kubebuilder
-	go test -v .
+	go test -v . -coverprofile coverage.out
 
 _test/kubebuilder:
 	curl -fsSL https://github.com/kubernetes-sigs/kubebuilder/releases/download/v$(KUBEBUILDER_VERSION)/kubebuilder_$(KUBEBUILDER_VERSION)_$(OS)_$(ARCH).tar.gz -o kubebuilder-tools.tar.gz

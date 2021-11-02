@@ -27,3 +27,10 @@ jobs:
     
     - name: Run integration tests
       run: echo "Running tests against $TEST_FQDN" && make test
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        files: ./coverage.out
+        verbose: true
