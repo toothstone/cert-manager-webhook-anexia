@@ -64,7 +64,6 @@ type anexiaDNSProviderSolver struct {
 // be used by your provider here, you should reference a Kubernetes Secret
 // resource and fetch these credentials using a Kubernetes clientset.
 type anexiaDNSProviderConfig struct {
-	ApiUrl             string `json:"apiUrl"`
 	SecretRef          string `json:"secretRef"`
 	SecretRefNamespace string `json:"secretRefNamespace"`
 	SecretKey          string `json:"secretKey"`
