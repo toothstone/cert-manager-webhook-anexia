@@ -24,7 +24,7 @@ import (
 
 var GroupName = os.Getenv("GROUP_NAME")
 
-const TIMEOUT = 30 * time.Second
+const Timeout = 30 * time.Second
 
 func main() {
 	if GroupName == "" {
@@ -120,7 +120,7 @@ func (c *anexiaDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
@@ -180,7 +180,7 @@ func (c *anexiaDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	client, err := anxcloudClient.New(anxcloudClient.TokenFromString(token))
 	if err != nil {
@@ -247,7 +247,7 @@ func loadConfig(cfgJSON *extapi.JSON) (anexiaDNSProviderConfig, error) {
 }
 
 func getToken(cfg anexiaDNSProviderConfig, c *anexiaDNSProviderSolver, ch *v1alpha1.ChallengeRequest) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	secret, err := c.client.CoreV1().Secrets(cfg.SecretRefNamespace).Get(ctx, cfg.SecretRef, metav1.GetOptions{})
 
