@@ -130,8 +130,12 @@ running against the real CloudDNS API.
 You can run the test suite with:
 
 ```bash
-TEST_ZONE_NAME=your.testing.zone.com. make verify
+TEST_ZONE_NAME=example.com. make test
 ```
+
+By also setting `TEST_FQDN=specific.$TEST_ZONE_NAME`
+you can specify the exact name for which a record will be presented,
+which is useful when running concurrent integration tests.
 
 ## Credits
 
