@@ -29,7 +29,7 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   secretName: {{ include "cert-manager-webhook-anexia.rootCACertificate" . }}
-  duration: 43800h # 5y
+  duration: {{ .Values.rootCACertificateDuration }}
   issuerRef:
     name: {{ include "cert-manager-webhook-anexia.selfSignedIssuer" . }}
   commonName: "ca.cert-manager-webhook-anexia.cert-manager"
@@ -67,7 +67,7 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   secretName: {{ include "cert-manager-webhook-anexia.servingCertificate" . }}
-  duration: 8760h # 1y
+  duration: {{ .Values.servingCertificateDuration }}
   issuerRef:
     name: {{ include "cert-manager-webhook-anexia.rootCAIssuer" . }}
   dnsNames:

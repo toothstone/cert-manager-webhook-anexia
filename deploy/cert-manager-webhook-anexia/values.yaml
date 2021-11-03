@@ -17,6 +17,9 @@ image:
   tag: 0.1.2
   pullPolicy: Always
 
+rootCACertificateDuration: 43800h # 5y
+servingCertificateDuration: 8760h # 1y
+
 nameOverride: ""
 fullnameOverride: ""
 
