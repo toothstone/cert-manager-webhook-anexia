@@ -28,7 +28,7 @@ helm install --namespace cert-manager cert-manager-webhook-anexia cert-manager-w
 ```bash
 helm install --namespace cert-manager cert-manager-webhook-anexia deploy/cert-manager-webhook-anexia
 ```
-**Note**: The kubernetes resources used to install the webhook should be deployed within the same namespace as the cert-manager.
+**Note**: Only installing the webhook's K8s resources to the same namespace as the cert-manager is tested.
 
 To uninstall the webhook run
 ```bash
