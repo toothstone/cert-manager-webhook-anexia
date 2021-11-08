@@ -6,31 +6,18 @@ on:
       - v*
 
 jobs:
-  # Build image and deploy to ghcr.io
+  # Build image and publish it
   docker:
     name: Build and deploy Docker image
     runs-on: ubuntu-latest
-    env:
-      IMAGE: ghcr.io/$GITHUB_REPOSITORY
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Get the version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
-      - name: Login
-        run: |
-          echo $PAT | docker login ghcr.io --username toothstone --password-stdin
-        env:
-          PAT: ${{ secrets.PACKAGE_REGISTRY_PAT }}
-      - name: Build image
-        run: |
-          docker build --tag $IMAGE:$VERSION .
-      - name: Publish version image
-        run: |
-          docker push $IMAGE:$VERSION
-      - name: Tag latest image
-        run: |
-          docker tag $IMAGE:$VERSION $IMAGE:latest
-      - name: Publish latest image
-        run: |
-          docker push $IMAGE:latest
+      - uses: actions/checkout@master
+      - name: Kaniko build
+        uses: aevea/action-kaniko@master
+        with:
+          registry: ghcr.io
+          image: toothstone/cert-manager-webhook-anexia
+          username: toothstone
+          password: ${{ secrets.PACKAGE_REGISTRY_PAT }}
+          strip_tag_prefix: v
+          tag_with_latest: true
